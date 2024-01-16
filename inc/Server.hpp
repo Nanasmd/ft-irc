@@ -45,6 +45,7 @@ class Server
 
 		~Server();
 		//input/output
+		void	send_request_for_pass_nick_user(Socket fd, Client& client);
 		void	process_input( Socket );
 		void	parse_command(string& , Client&  );
 		void 	flush_all_buffers();
