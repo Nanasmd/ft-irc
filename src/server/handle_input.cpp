@@ -11,46 +11,68 @@ void	retryRegister(Client &client, Server &server, string &svrname)
 	server.user(retry, client);
 }
 
-void	Server::process_input(Socket fd ) {
-	Client &client = (this->fd_map.find(fd))->second;
-	ssize_t byte_count;
-	string temp;
+// Function to send requests for PASS, NICK, and USER to the client
+void Server::send_request_for_pass_nick_user(Socket fd, Client& client) {
+    if (!client.passwd_provided) {
+        sendMessage(fd, "Please provide PASS\r\n");
+    } else if (!client.nickname_provided) {
+        sendMessage(fd, "Please provide NICK\r\n");
+    } else if (!client.username_provided) {
+        sendMessage(fd, "Please provide USER\r\n");
+    }
+}
 
-	temp.resize(SERVER_LIMITS_SIZE);
-	byte_count = recv(fd, (void *)(temp.c_str()), SERVER_LIMITS_SIZE, MSG_DONTWAIT);
-	if (byte_count == -1)
-		throw runtime_error(string("recv: ") + strerror(errno));
-	if (byte_count == 0) {
-		this->_disconect_client(fd);
-		return ;
-	}
-	temp.resize(byte_count);
-	client.cmd_buff += temp;
-	if (client.cmd_buff.find("\r\n") == string::npos) {
-		return ;
-	}
-	cout << YELLOW << "str received = [" << client.cmd_buff << "]" << RESET << endl;
-	cout << YELLOW << byte_count << " bytes RECEIVED" << RESET << endl;
-	while (true) {
-		if (client.cmd_buff.find(endmsg) == string::npos)
-			break;
-		string tok = client.cmd_buff.substr(0, client.cmd_buff.find(endmsg));
-		try {
-			parse_command(tok, this->fd_map[fd]);
-			client.cmd_buff.erase(0, client.cmd_buff.find(endmsg) + 2);
-			if (!client.isRegistered && client.asTriedNickname)
-				::retryRegister(client, *this, this->_server_name);
-		}
-		catch (NicknameInUse& e) {
-			cout << RED << "Error: " << e.what() << RESET << endl;
-			client.asTriedNickname = true;
-			break ;
-		}
-	}
-	client.cmd_buff.clear();
-	cout << YELLOW << "sending = [" << client.getBuff() << "]" << RESET << endl;
-	//flushing all buffer from all client
-	flush_all_buffers();
+void Server::process_input(Socket fd) {
+    Client &client = (this->fd_map.find(fd))->second;
+    ssize_t byte_count;
+    string temp;
+
+    temp.resize(SERVER_LIMITS_SIZE);
+    byte_count = recv(fd, (void *)(temp.c_str()), SERVER_LIMITS_SIZE, MSG_DONTWAIT);
+    if (byte_count == -1)
+        throw runtime_error(string("recv: ") + strerror(errno));
+    if (byte_count == 0) {
+        this->_disconect_client(fd);
+        return;
+    }
+    temp.resize(byte_count);
+    client.cmd_buff += temp;
+    
+    // Check if the client has provided PASS, NICK, and USER
+    if (!client.isRegistered) {
+        if (client.passwd_provided && client.nickname_provided && client.username_provided) {
+            // Client has provided all necessary information, proceed with registration
+            client.isRegistered = true;
+            // Send welcome message or handle registration as needed
+            // ...
+        } else {
+            // Client needs to provide PASS, NICK, and USER
+            send_request_for_pass_nick_user(fd, client);
+        }
+    }
+    
+    if (client.cmd_buff.find("\r\n") == string::npos) {
+        return;
+    }
+    cout << YELLOW << "str received = [" << client.cmd_buff << "]" << RESET << endl;
+    cout << YELLOW << byte_count << " bytes RECEIVED" << RESET << endl;
+    while (true) {
+        if (client.cmd_buff.find(endmsg) == string::npos)
+            break;
+        string tok = client.cmd_buff.substr(0, client.cmd_buff.find(endmsg));
+        try {
+            parse_command(tok, this->fd_map[fd]);
+            client.cmd_buff.erase(0, client.cmd_buff.find(endmsg) + 2);
+        } catch (NicknameInUse& e) {
+            cout << RED << "Error: " << e.what() << RESET << endl;
+            client.asTriedNickname = true;
+            break;
+        }
+    }
+    client.cmd_buff.clear();
+    cout << YELLOW << "sending = [" << client.getBuff() << "]" << RESET << endl;
+    //flushing all buffer from all client
+    flush_all_buffers();
 }
 
 void	Server::parse_command( string& input, Client& client ) {
