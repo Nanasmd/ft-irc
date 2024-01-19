@@ -117,6 +117,14 @@ class Server
 				virtual const char* what() const throw();
 		};
 
+		class PasswordIncorrect : exception 
+		{
+			public:
+    				const char* what() const throw() {
+        		return "Password is incorrect.";
+    			}
+		};
+
 	void add_rply_from_channel(const string &msg, Client &client, Channel &dest, const string &cmd, int code);
 };
 
