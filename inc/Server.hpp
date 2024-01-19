@@ -45,7 +45,6 @@ class Server
 
 		~Server();
 		//input/output
-		void	send_request_for_pass_nick_user(Socket fd, Client& client);
 		void	process_input( Socket );
 		void	parse_command(string& , Client&  );
 		void 	flush_all_buffers();
@@ -82,6 +81,7 @@ class Server
 		void	wallops( const  vector<string>&, Client& );
 		void	names( const vector<string>&, Client& );
 		void	away( const vector<string>&, Client& );
+		void	invite( const vector<string>&, Client& );
 		//command utils
 		void    process_topic_cmd( const vector <string>& , Client& , Channel& );
 		void	process_part_cmd( Channel&, Client&, const string& );
@@ -90,6 +90,11 @@ class Server
 		void	process_kick_cmd( Channel&, const string&, Client&, const string& );
 		void	handle_user( const vector<string>& params, Client& client, Client &target);
 		void    handle_channel(const vector<string> &params, Client &client, Channel &dest);
+		void	imode(Channel &dest, char sign);
+		void	tmode(Channel &dest, char sign);
+		void	kmode(Channel &dest, char sign, string param, Client &client);
+		void	omode(Channel &dest, char sign, string param, Client &client);
+		void	lmode(Channel &dest, char sign, string param, Client &client);
 
 	//server run functions
 		void 	run(const bool& );

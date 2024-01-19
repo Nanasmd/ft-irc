@@ -35,8 +35,10 @@ int main( int ac, char **av )
 {
 	Server *server = NULL;
 
-	try {
-		if (ac != 3) throw invalid_argument("Usage: ./ircserv <port> <password>");
+	try
+	{
+		if (ac != 3)
+			throw invalid_argument("Usage: ./ircserv <port> <password>");
 		check_port(av[1]);
 		server = new Server(av[1], av[2]);
 		signal_handling();
@@ -52,7 +54,8 @@ int main( int ac, char **av )
 		}
 		delete server;
 	}
-	catch ( exception& x ) {
+	catch (exception& x)
+	{
 		cout << RED << x.what() << RESET << endl;
 		delete server;
 		return EXIT_FAILURE;

@@ -126,66 +126,164 @@ void	Server::handle_user(const vector<string>& params, Client& client, Client &t
 	this->add_rply_from_server(mode_to_str(target.getMode()), target, "", RPL_UMODEIS);
 }
 
+void	Server::imode(Channel &dest, char sign)
+{
+	if (sign == '+')
+		dest.setIsInviteOnly(true);
+	else
+		dest.setIsInviteOnly(false);
+}
+
+void	Server::tmode(Channel &dest, char sign)
+{
+	if (sign == '+')
+		dest.setTopicPrivate(true);
+	else
+		dest.setTopicPrivate(false);
+}
+
+static bool is_printable(const std::string& str) {
+    for (std::size_t i = 0; i < str.length(); ++i) {
+        if (!(std::isdigit(static_cast<unsigned char>(str[i])) || std::isalpha(static_cast<unsigned char>(str[i])))) {
+            return false;
+        }
+    }
+    return true;
+}
+
+void	Server::kmode(Channel &dest, char sign, string param, Client& client)
+{
+	if (sign == '+')
+	{
+		if (is_printable(param))
+		{
+			dest.setPrivate(true);
+			dest.setPassword(param);
+		}
+		else
+			this->add_rply_from_server(":Please use alnum parameter with l mode", client, dest, "MODE", ERR_KEYSET);
+	}
+	else
+		dest.setPrivate(false);
+}
+
+void	Server::omode(Channel &dest, char sign, string param, Client& client)
+{
+	cout << "--------------OPERATOR VECTOR BEFORE-------------------" << endl;
+	for (vector<Socket>::iterator it = dest.operators.begin(); it != dest.operators.end(); ++it)
+		cout << *it << endl;
+	try {
+		Client &clientToChange= find_user(param, client, "MODE");
+		if (sign == '+')
+			dest.addOper(clientToChange);
+		else
+			dest.removeOper(clientToChange);
+	cout << "--------------OPERATOR VECTOR AFTER-------------------" << endl;
+		for (vector<Socket>::iterator it = dest.operators.begin(); it != dest.operators.end(); ++it)
+			cout << *it << endl;
+	}
+	catch ( exception& x)
+	{
+		cout << RED << x.what() << RESET << endl;
+		return ;
+	}
+
+}
+
+static bool is_num(const std::string& str) {
+    for (std::size_t i = 0; i < str.length(); ++i) {
+        // Utilisez isdigit et isalpha pour vérifier si un caractère est alphanumérique
+        if (!(std::isdigit(static_cast<unsigned char>(str[i])))) {
+            return false;
+        }
+    }
+    return true;
+}
+
+void	Server::lmode(Channel &dest, char sign, string param, Client& client)
+{
+	if (sign == '+')
+	{
+		if (is_num(param))
+		{
+			dest.setIsLimit(true);
+			dest.setLimit(std::atoi(param.c_str()));
+		}
+		else
+			this->add_rply_from_server(":Please use digit parameter with l mode", client, dest, "MODE", ERR_KEYSET);
+	}
+	else
+		dest.setIsLimit(false);
+}
+
 void    Server::handle_channel(const vector<string>& params, Client& client, Channel &dest)
 {
+	cout << "----------------CHANEL BEFORE--------------------" << endl;
+	cout << "is invite: " << dest.getIsInviteOnly() << endl;
+	cout << "is limite: " << dest.getIsLimit() << endl;
+	cout << "limite: " << dest.getLimit() << endl;
+	cout << "is Private: " << dest.getIsPrivate() << endl;
+	cout << "Password: " << dest.getPassword() << endl;
 	if (params.size() == 1)
 	{
 		this->add_rply_from_server(mode_to_str(dest.getMode()), client, dest, "", RPL_CHANNELMODEIS);
 		return ;
 	}
 	string input = params[1];
+	string temp_str = params[2];
+	vector<string>	param_mode;
+	little_split(param_mode, temp_str, "*");
+	str_iter it_param = param_mode.begin();
 	if (input[0] != '+' && input[0] != '-')
 	{
 		this->add_rply_from_server(":Please use + or - with mode", client, dest, "MODE", ERR_UNKNOWNMODE);
 		throw invalid_argument("mode: Please use + or - with mode");
 	}
-	if (input[0] == '+')
+	char	sign = input[0];
+	input.erase(0, 1);
+	for (string::iterator it = input.begin(); it != input.end(); ++it)
 	{
-		input.erase(0, 1);
-		for (string::iterator it = input.begin(); it != input.end(); ++it)
+		cout << *it << endl;
+		cout << *it_param << endl;
+		switch (*it)
 		{
-			switch (*it)
-			{
-				case 'p':
-					dest.setMode(p);
-					break ;
-				case 'n':
-					dest.setMode(n);
-					break ;
-				default:
-					this->add_rply_from_server(":Please use known mode", client, dest, "MODE", ERR_UNKNOWNMODE);
-					throw invalid_argument("mode: Please use known mode");
-					break ;
-			}
+			case 'i':
+				imode(dest, sign);
+				break ;
+			case 't':
+				tmode(dest, sign);
+				break ;
+			case 'k':
+				kmode(dest, sign, *it_param, client);
+				break ;
+			case 'o':
+				omode(dest, sign, *it_param, client);
+				break ;
+			case 'l':
+				lmode(dest, sign, *it_param, client);
+				break ;
+			default:
+				this->add_rply_from_server(":Please use known mode", client, dest, "MODE", ERR_UNKNOWNMODE);
+				throw invalid_argument("mode: Please use known mode");
+				break ;
 		}
-	}
-	else
-	{
-		input.erase(0, 1);
-		for (string::iterator it = input.begin(); it != input.end(); ++it)
-		{
-			switch (*it)
-			{
-				case 'p':
-					dest.unSetMode(p);
-					break ;
-				case 'n':
-					dest.unSetMode(n);
-					break ;
-				default:
-					this->add_rply_from_server(":Please use known mode", client, dest, "MODE", ERR_UNKNOWNMODE);
-					throw invalid_argument("mode: Please use known mode");
-					break ;
-			}
-		}
+		it_param++;
 	}
 	this->add_rply_from_server(mode_to_str(dest.getMode()), client, dest, "", RPL_CHANNELMODEIS);
+	cout << "----------------CHANEL AFTER--------------------" << endl;
+	cout << "is invite: " << dest.getIsInviteOnly() << endl;
+	cout << "is limite: " << dest.getIsLimit() << endl;
+	cout << "limite: " << dest.getLimit() << endl;
+	cout << "is Private: " << dest.getIsPrivate() << endl;
+	cout << "Password: " << dest.getPassword() << endl;
 }
 
 void	Server::mode( const vector<string>& params, Client &client)
 {
+	cout << "1" << endl;
 	try
 	{
+		cout << "2" << endl;
 		if (params.empty())
 		{
 			add_rply_from_server(":Not enough parameters", client , "MODE", ERR_NEEDMOREPARAMS);

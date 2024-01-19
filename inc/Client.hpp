@@ -17,14 +17,12 @@ class Client
 		Mode		modeUser; // Use enum MODES to define flags ex: modeUser = a | i | w | o
 	public:
         vector<string> channelsMember;
-        bool 		passwd_provided;
-		bool 		nickname_provided;
-    	bool 		username_provided; 
-        bool		isRegistered;
-        bool 		isAway;
-        bool 		isOperator;
-		bool 		asTriedNickname;
-		bool    	isLeaving;
+        bool 	passwd_provided;
+        bool	 isRegistered;
+        bool 	isAway;
+        bool 	isOperator;
+		bool 	asTriedNickname;
+		bool    isLeaving;
 		string		cmd_buff;
 
 
