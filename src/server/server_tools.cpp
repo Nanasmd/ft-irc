@@ -49,19 +49,42 @@ void	add_cmd_client(const string& content, Client& client, const Client& author,
 	client.setBuff(client.getBuff() + msg);
 }
 
-void	Server::add_rply_from_server(const string&  msg, Client& dest, const string&  cmd, int code) {
-	string dest_nick = dest.getNickname();
-	if (dest_nick.empty())
-		dest_nick = "*";
-	dest_nick = " " + dest_nick;
-	string result = ":" + this->_server_name + " " + int_to_string(code) + dest_nick + " " + cmd + msg + endmsg;
-	dest.setBuff(dest.getBuff() + result);
+//UPDATED VERSION : TRUNCATION CORR
+void Server::add_rply_from_server(const std::string& msg, Client& dest, const std::string& cmd, int code) {
+    std::string prefix = this->_server_name;
+    std::string command = int_to_string(code);
+    std::string params = dest.getNickname().empty() ? "*" : dest.getNickname();
+    std::string trailing_msg = cmd + msg;
+
+    std::string response = ":" + prefix + " " + command + " " + params + " :" + trailing_msg + "\r\n";
+    dest.setBuff(dest.getBuff() + response);
 }
 
-void	Server::add_rply_from_server(const string&  msg, Client &client, Channel& dest, const string&  cmd, int code) {
-	string result = ":" + this->_server_name + " " + int_to_string(code) + " " + client.getNickname() + " " + dest.getName() + " " + cmd + msg + endmsg;
-	client.setBuff(client.getBuff() + result);
+void Server::add_rply_from_server(const std::string& msg, Client& client, Channel& dest, const std::string& cmd, int code) {
+    std::string prefix = this->_server_name;
+    std::string command = int_to_string(code);
+    std::string params = client.getNickname();
+    std::string channel_name = dest.getName();
+    std::string trailing_msg = cmd + msg;
+
+    std::string response = ":" + prefix + " " + command + " " + params + " " + channel_name + " :" + trailing_msg + "\r\n";
+    client.setBuff(client.getBuff() + response);
 }
+
+// ORIGINAL VERSION
+// void	Server::add_rply_from_server(const string&  msg, Client& dest, const string&  cmd, int code) {
+// 	string dest_nick = dest.getNickname();
+// 	if (dest_nick.empty())
+// 		dest_nick = "*";
+// 	dest_nick = " " + dest_nick;
+// 	string result = ":" + this->_server_name + " " + int_to_string(code) + dest_nick + " " + cmd + msg + endmsg;
+// 	dest.setBuff(dest.getBuff() + result);
+// }
+
+// void	Server::add_rply_from_server(const string&  msg, Client &client, Channel& dest, const string&  cmd, int code) {
+// 	string result = ":" + this->_server_name + " " + int_to_string(code) + " " + client.getNickname() + " " + dest.getName() + " " + cmd + msg + endmsg;
+// 	client.setBuff(client.getBuff() + result);
+// }
 
 void	add_cmd_client(const string& content, Client& client, const Client& author, const string&  cmd, int code) {
 	string msg = ":" + author.getNickname() + "!" + author.getUsername() + "@" + author.getHostname();
