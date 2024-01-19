@@ -1,27 +1,8 @@
 #include "Server.hpp"
 #include <ostream>
+#include <sstream>
 
-void	retryRegister(Client &client, Server &server, string &svrname)
-{
-	vector<string> retry = vector<string>();
-	retry.push_back(client.getNickname());
-	retry.push_back(client.getHostname());
-	retry.push_back(svrname);
-	retry.push_back(":" + client.getNickname());
-	server.user(retry, client);
-}
-
-// Function to send requests for PASS, NICK, and USER to the client
-void Server::send_request_for_pass_nick_user(Socket fd, Client& client) {
-    if (!client.passwd_provided) {
-        sendMessage(fd, "Please provide PASS\r\n");
-    } else if (!client.nickname_provided) {
-        sendMessage(fd, "Please provide NICK\r\n");
-    } else if (!client.username_provided) {
-        sendMessage(fd, "Please provide USER\r\n");
-    }
-}
-
+// FINISHED VERSION
 void Server::process_input(Socket fd) {
     Client &client = (this->fd_map.find(fd))->second;
     ssize_t byte_count;
@@ -37,41 +18,70 @@ void Server::process_input(Socket fd) {
     }
     temp.resize(byte_count);
     client.cmd_buff += temp;
-    
-    // Check if the client has provided PASS, NICK, and USER
-    if (!client.isRegistered) {
-        if (client.passwd_provided && client.nickname_provided && client.username_provided) {
-            // Client has provided all necessary information, proceed with registration
-            client.isRegistered = true;
-            // Send welcome message or handle registration as needed
-            // ...
-        } else {
-            // Client needs to provide PASS, NICK, and USER
-            send_request_for_pass_nick_user(fd, client);
-        }
-    }
-    
+
     if (client.cmd_buff.find("\r\n") == string::npos) {
         return;
     }
     cout << YELLOW << "str received = [" << client.cmd_buff << "]" << RESET << endl;
     cout << YELLOW << byte_count << " bytes RECEIVED" << RESET << endl;
-    while (true) {
-        if (client.cmd_buff.find(endmsg) == string::npos)
-            break;
+
+    while (client.cmd_buff.find(endmsg) != string::npos) {
         string tok = client.cmd_buff.substr(0, client.cmd_buff.find(endmsg));
+        client.cmd_buff.erase(0, client.cmd_buff.find(endmsg) + 2);
+
         try {
-            parse_command(tok, this->fd_map[fd]);
-            client.cmd_buff.erase(0, client.cmd_buff.find(endmsg) + 2);
-        } catch (NicknameInUse& e) {
+            if (!client.isRegistered) {
+                string command = tok.substr(0, tok.find(" ")); // Extract the command
+
+                if (!client.passwd_provided) {
+                    if (command == "PASS") {
+                        parse_command(tok, client);
+                        client.passwd_provided = true;
+                        sendMessage(client, "Please provide NICK\r\n");
+                    } else {
+                        sendMessage(client, "Please provide PASS\r\n");
+                        return;
+                    }
+                } else if (!client.nickname_provided) {
+                    if (command == "NICK") {
+                        parse_command(tok, client);
+                        client.nickname_provided = true;
+                        sendMessage(client, "Please provide USER\r\n");
+                    } else {
+                        sendMessage(client, "Please provide NICK\r\n");
+                        return;
+                    }
+                } else if (!client.username_provided) {
+                    if (command == "USER") {
+                        parse_command(tok, client);
+                        client.username_provided = true;
+                    } else {
+                        sendMessage(client, "Please provide USER\r\n");
+                        return;
+                    }
+                }
+
+                if (client.passwd_provided && client.nickname_provided && client.username_provided) {
+                    client.isRegistered = true; // Register the client if all credentials are provided
+                    // Handle client registration completion
+                }
+            } else {
+                // Process other commands for registered clients
+                parse_command(tok, client);
+            }
+        } catch (const NicknameInUse& e) {
             cout << RED << "Error: " << e.what() << RESET << endl;
+            client.asTriedNickname = true;
+            break;
+        } catch (const PasswordIncorrect& e) {
+            cout << RED << "Error: " << e.what() << RESET << endl;
+            sendMessage(client, "Password is incorrect.\r\n");
             client.asTriedNickname = true;
             break;
         }
     }
     client.cmd_buff.clear();
     cout << YELLOW << "sending = [" << client.getBuff() << "]" << RESET << endl;
-    //flushing all buffer from all client
     flush_all_buffers();
 }
 
