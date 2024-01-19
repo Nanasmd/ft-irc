@@ -50,8 +50,10 @@ class Server
 		void 	flush_all_buffers();
 
 		//respond from server
-		void	add_rply_from_server(const string& , Client& , const string& , int );
-		void    add_rply_from_server(const string &, Client &, Channel &, const string &, int);
+//		void	add_rply_from_server(const string& , Client& , const string& , int );
+//		void    add_rply_from_server(const string &, Client &, Channel &, const string &, int);
+		void 	add_rply_from_server(const std::string& , Client& , const std::string& , int );
+		void 	add_rply_from_server(const std::string &, Client &, Channel &, const std::string &, int);
 
 		//checks
 		Client&		find_user(const string& , Client&, const string&);
