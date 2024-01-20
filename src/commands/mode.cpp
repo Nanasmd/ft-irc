@@ -224,6 +224,10 @@ void    Server::handle_channel(const vector<string>& params, Client& client, Cha
 	cout << "limite: " << dest.getLimit() << endl;
 	cout << "is Private: " << dest.getIsPrivate() << endl;
 	cout << "Password: " << dest.getPassword() << endl;
+	if (!dest.user_is_operator(client)) {
+		add_rply_from_server(":You're not channel operator", client, params[0], ERR_CHANOPRIVSNEEDED);
+		throw invalid_argument(params[1] + " :You're not channel operator");
+	}
 	if (params.size() == 1)
 	{
 		this->add_rply_from_server(mode_to_str(dest.getMode()), client, dest, "", RPL_CHANNELMODEIS);
@@ -314,3 +318,8 @@ void	Server::mode( const vector<string>& params, Client &client)
 		return ;
 	}
 }
+                           
+// ERR_CHANOPRIVSNEEDED //pb
+// ERR_USERNOTINCHANNEL            
+// RPL_INVITELIST                  
+// RPL_ENDOFINVITELIST

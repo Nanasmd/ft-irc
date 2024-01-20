@@ -33,4 +33,3 @@ void Client::clearBuff() {
 	if (!this->buffer.empty())
 		this->buffer.clear();
 }
-

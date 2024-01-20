@@ -69,14 +69,20 @@ void	Server::invite( const vector<string>& params, Client& client)
 		}
 		cout << "here [8]" << endl;
 		// invite
-		bool is_already_in_invite_list = true;
-		cl_iter it2 = find(current_chan.inviteList.begin(), current_chan.inviteList.end(), client.getFd());
-			if (it2 == current_chan.inviteList.end()) {
-				is_already_in_invite_list = false;
+		bool is_already_in_invite_list = false;
+		for (vector<Socket>::iterator it = current_chan.inviteList.begin(); it != current_chan.inviteList.end(); ++it)
+		{
+			if (*it == target.getFd())
+				is_already_in_invite_list = true;
 		}
 		if (!is_already_in_invite_list)
-			current_chan.addInvite(client);
-		add_rply_from_server(params[0], client, params[1], RPL_INVITING);
+		{
+			for (vector<Channel>::iterator it = this->chan_vec.begin(); it != this->chan_vec.end(); ++it) {
+				if (it->getName() == params[1])
+					(*it).addInvite(target);
+			}
+			add_rply_from_server(params[0], client, params[1], RPL_INVITING);
+		}
 		cout << "here [9]" << endl;
 		cout << "--------------INVITE VECTOR BEFORE-------------------" << endl;
 		for (vector<Socket>::iterator it = current_chan.inviteList.begin(); it != current_chan.inviteList.end(); ++it)

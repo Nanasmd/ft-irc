@@ -70,11 +70,13 @@ void	Server::join( const vector<string>& params, Client& client)
 			// mode verif
 			if (current_chan->getIsInviteOnly() == true && !current_chan->user_in_invite_list(client)) {
 				cout << "------------------------------++++" << endl;
-				for (vector<Socket>::iterator it = current_chan->operators.begin(); it != current_chan->operators.end(); ++it)
+				for (vector<Socket>::iterator it = current_chan->inviteList.begin(); it != current_chan->inviteList.end(); ++it)
+				{
 					cout << "in chanel " << *it << endl;
-				cout << "current client" << client.getFd() << endl;
-				cout << current_chan->getIsInviteOnly() << endl;
-				cout << current_chan->user_in_invite_list(client) << endl;
+					cout << "current client" << client.getFd() << endl;
+					cout << current_chan->getIsInviteOnly() << endl;
+					cout << current_chan->user_in_invite_list(client) << endl;
+				}
 				cout << "------------------------------++++" << endl;
 				add_rply_from_server(":Cannot join channel (+i)", client, current_chan->getName(), ERR_INVITEONLYCHAN);
 				throw invalid_argument("join: Cannot join channel (+i)");

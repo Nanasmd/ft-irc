@@ -34,6 +34,7 @@ void Server::process_input(Socket fd) {
                 string command = tok.substr(0, tok.find(" ")); // Extract the command
 
                 if (!client.passwd_provided) {
+                    // 20.01 : REVOIR PASS NON RECONNU
                     if (command == "PASS") {
                         parse_command(tok, client);
                         client.passwd_provided = true;
@@ -84,6 +85,7 @@ void Server::process_input(Socket fd) {
     cout << YELLOW << "sending = [" << client.getBuff() << "]" << RESET << endl;
     flush_all_buffers();
 }
+
 
 void	Server::parse_command( string& input, Client& client ) {
 	vector<string>	result = vector<string>();

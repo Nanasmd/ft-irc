@@ -87,11 +87,12 @@ bool	Channel::user_is_operator(const Client& client) {
 }
 
 bool	Channel::user_in_invite_list(const Client& client) {
-	cl_iter it = find(this->inviteList.begin(), this->inviteList.end(), client.getFd());
-	if (it == this->inviteList.end()) {
-		return (false);
+	for (vector<Socket>::iterator it = inviteList.begin(); it != inviteList.end(); ++it)
+	{
+        if (*it == client.getFd())
+            return (true);
 	}
-	return (true);
+	return (false);
 }
 
 void    Channel::addClient(const Client &client) {
